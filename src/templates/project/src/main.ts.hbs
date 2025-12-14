@@ -33,6 +33,15 @@ async function main() {
       enabled: true,
       uri: buildUriFromConfig(config.database),
     },
+    // Enable FieldShield based on config
+    plugins: {
+      fieldShield: config.features?.fieldShield?.enabled
+        ? {
+            strict: config.features.fieldShield.strict ?? true,
+            debug: false,
+          }
+        : undefined,
+    },
     i18n: {
       enabled: config.features?.i18n?.enabled ?? false,
       modulesDir: "./src/modules",
