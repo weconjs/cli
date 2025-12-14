@@ -1,0 +1,21 @@
+/**
+ * Application Bootstrap
+ */
+
+import Wecon, { Routes } from "@weconjs/lib";
+import { modules } from "./modules/index.js";
+
+// Build API routes from modules
+const apiRoutes = new Routes({
+  prefix: "/api/v1",
+  routes: modules.map((m) => m.routes),
+});
+
+// Create Wecon application
+const wecon = new Wecon()
+  .routes(apiRoutes)
+  .roles(["admin", "user", "guest"])
+  .guestRole("guest")
+  .build();
+
+export { wecon, modules };

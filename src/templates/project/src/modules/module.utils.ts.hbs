@@ -1,0 +1,55 @@
+/**
+ * Module Utilities
+ */
+import { Routes } from "@weconjs/lib";
+
+export interface ModuleConfig {
+  name: string;
+  namespace?: string;
+  description?: string;
+  routes: Routes;
+  imports?: string[];
+  exports?: string[];
+  onInit?: (ctx: unknown) => Promise<void> | void;
+  onDestroy?: (ctx: unknown) => Promise<void> | void;
+}
+
+export interface Module {
+  name: string;
+  namespace: string;
+  description: string;
+  routes: Routes;
+  imports: string[];
+  exports: string[];
+  onInit?: (ctx: unknown) => Promise<void> | void;
+  onDestroy?: (ctx: unknown) => Promise<void> | void;
+}
+
+function setNamespaceMeta(routes: any, namespace: string): void {
+  if (!routes || typeof routes !== "object") return;
+  if ("meta" in routes) {
+    routes.meta = { ...(routes.meta as object), namespace };
+  }
+  if ("routes" in routes && Array.isArray(routes.routes)) {
+    for (const child of routes.routes) {
+      setNamespaceMeta(child, namespace);
+    }
+  }
+}
+
+export function defineModule(config: ModuleConfig): Module {
+  if (!config.name) throw new Error("[Wecon] Module name is required");
+  const namespace = config.namespace ?? config.name;
+  if (config.routes) setNamespaceMeta(config.routes, namespace);
+
+  return {
+    name: config.name,
+    namespace,
+    description: config.description ?? "",
+    routes: config.routes,
+    imports: config.imports ?? [],
+    exports: config.exports ?? [],
+    onInit: config.onInit,
+    onDestroy: config.onDestroy,
+  };
+}

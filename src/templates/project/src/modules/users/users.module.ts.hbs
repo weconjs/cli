@@ -1,0 +1,34 @@
+/**
+ * Users Module
+ */
+
+import { defineModule } from "../module.utils.js";
+import { Routes, Route, PostmanGroup, PostmanRoute } from "@weconjs/lib";
+import { userController } from "./controllers/user.controller.js";
+
+const usersRoutes = new Routes({
+  prefix: "/users",
+  postman: new PostmanGroup({ folderName: "Users" }),
+  routes: [
+    new Route({
+      method: "GET",
+      path: "/",
+      middlewares: [userController.findAll],
+      rai: "users:read",
+      postman: new PostmanRoute({ name: "Get all users" }),
+    }),
+    new Route({
+      method: "POST",
+      path: "/",
+      middlewares: [userController.create],
+      rai: "users:create",
+      postman: new PostmanRoute({ name: "Create user" }),
+    }),
+  ],
+});
+
+export default defineModule({
+  name: "users",
+  description: "User management module",
+  routes: usersRoutes,
+});

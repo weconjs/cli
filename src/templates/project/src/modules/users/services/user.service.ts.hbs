@@ -1,0 +1,19 @@
+/**
+ * User Service
+ */
+
+import { User, IUser } from "../models/user.model.js";
+
+class UserService {
+  async findAll(): Promise<IUser[]> {
+    return User.find();
+  }
+
+  async create(data: Partial<IUser>): Promise<IUser> {
+    const user = new User(data);
+    await user.save();
+    return user;
+  }
+}
+
+export const userService = new UserService();

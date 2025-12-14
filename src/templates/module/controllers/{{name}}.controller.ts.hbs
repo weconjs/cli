@@ -1,0 +1,32 @@
+/**
+ * {{capitalize name}} Controller
+ */
+
+import type { Request, Response } from "express";
+
+class {{capitalize name}}Controller {
+  async findAll(req: Request, res: Response) {
+    res.json({ message: "Get all {{name}}" });
+  }
+
+  async findOne(req: Request, res: Response) {
+    const { id } = req.params;
+    res.json({ message: `Get {{name}} ${id}` });
+  }
+
+  async create(req: Request, res: Response) {
+    res.json({ message: "Create {{name}}" });
+  }
+
+  async update(req: Request, res: Response) {
+    const { id } = req.params;
+    res.json({ message: `Update {{name}} ${id}` });
+  }
+
+  async delete(req: Request, res: Response) {
+    const { id } = req.params;
+    res.json({ message: `Delete {{name}} ${id}` });
+  }
+}
+
+export const {{name}}Controller = new {{capitalize name}}Controller();

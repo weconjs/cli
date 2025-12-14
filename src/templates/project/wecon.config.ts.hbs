@@ -1,0 +1,68 @@
+/**
+ * Wecon Framework Configuration
+ */
+
+import { defineConfig } from "@weconjs/core";
+
+export default defineConfig({
+  // App metadata
+  app: {
+    name: "{{name}}",
+    version: "1.0.0",
+  },
+
+  // Runtime modes
+  modes: {
+    development: {
+      port: {{port}},
+      database: {
+        debug: true,
+        mongoose: {
+          protocol: "mongodb",
+          host: "localhost",
+          port: 27017,
+          database: "{{dbName}}",
+        },
+      },
+      logging: {
+        level: "debug",
+      },
+    },
+
+    production: {
+      port: 8080,
+      database: {
+        debug: false,
+        mongoose: {
+          protocol: "mongodb+srv",
+          host: process.env.DB_HOST || "localhost",
+          database: "{{dbName}}",
+          username: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+        },
+      },
+      logging: {
+        level: "info",
+        enableFile: true,
+      },
+    },
+  },
+
+  // Module registration
+  modules: [
+    "./src/modules/users",
+  ],
+
+  // Feature toggles
+  features: {
+    i18n: {
+      enabled: true,
+      defaultLocale: "en",
+      supported: ["en"],
+    },
+    fieldShield: {
+      enabled: true,
+      strict: true,
+    },
+  },
+});

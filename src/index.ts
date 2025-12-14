@@ -19,6 +19,7 @@ import { devCommand } from "./commands/dev.js";
 import { startCommand } from "./commands/start.js";
 import { buildCommand } from "./commands/build.js";
 import { generateCommand } from "./commands/generate.js";
+import { postmanCommand } from "./commands/postman.js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
@@ -53,6 +54,7 @@ program.addCommand(devCommand);
 program.addCommand(startCommand);
 program.addCommand(buildCommand);
 program.addCommand(generateCommand);
+program.addCommand(postmanCommand);
 
 // Parse arguments
 program.parse(process.argv);

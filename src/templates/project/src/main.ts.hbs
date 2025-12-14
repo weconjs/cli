@@ -1,0 +1,60 @@
+/**
+ * Wecon Application Entry Point
+ */
+
+import path from "path";
+import {
+  createWecon,
+  loadConfig,
+  buildUriFromConfig,
+  type WeconContext,
+} from "@weconjs/core";
+
+async function main() {
+  // Load configuration
+  const config = await loadConfig(
+    path.resolve(process.cwd(), "wecon.config.ts"),
+    process.env.NODE_ENV
+  );
+
+  console.log(`\n🚀 Starting ${config.app.name} v${config.app.version}`);
+  console.log(`📦 Mode: ${config.mode}\n`);
+
+  // Import modules after config is loaded
+  const { wecon, modules } = await import("./bootstrap.js");
+
+  // Create and start the application
+  const app = await createWecon({
+    config,
+    modules: [...modules],
+    wecon,
+    middleware: [],
+    database: {
+      enabled: true,
+      uri: buildUriFromConfig(config.database),
+    },
+    i18n: {
+      enabled: config.features?.i18n?.enabled ?? false,
+      modulesDir: "./src/modules",
+    },
+    logger: {
+      useWinston: true,
+      enableFile: config.logging?.enableFile ?? false,
+    },
+    hooks: {
+      onBoot: async (ctx: WeconContext) => {
+        ctx.logger.info("Application ready to receive requests");
+      },
+      onShutdown: async (ctx: WeconContext) => {
+        ctx.logger.info("Application shutting down...");
+      },
+    },
+  });
+
+  await app.start();
+}
+
+main().catch((err) => {
+  console.error("Failed to start application:", err);
+  process.exit(1);
+});

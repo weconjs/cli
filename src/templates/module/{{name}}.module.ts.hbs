@@ -1,0 +1,16 @@
+/**
+ * {{capitalize name}} Module
+ */
+
+import { Routes, PostmanGroup } from "@weconjs/lib";
+import { defineModule } from "../module.utils.js";
+
+export default defineModule({
+  name: "{{name}}",
+  description: "{{capitalize name}} module",
+  routes: new Routes({
+    prefix: "/{{name}}",
+    postman: new PostmanGroup({ folderName: "{{capitalize name}}" }),
+    routes: [],
+  }),
+});

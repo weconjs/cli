@@ -138,4 +138,16 @@ describe("CLI Commands", () => {
       expect(output).toContain("module");
     });
   });
+
+  describe("wecon postman command", () => {
+    it("should show help for postman command", () => {
+      const output = execSync(
+        `node ${path.join(__dirname, "../dist/index.js")} postman --help`,
+        { encoding: "utf-8" }
+      );
+
+      expect(output).toContain("Generate Postman collection");
+      expect(output).toContain("--env");
+    });
+  });
 });
