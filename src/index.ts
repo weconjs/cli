@@ -19,6 +19,15 @@ import { devCommand } from "./commands/dev.js";
 import { startCommand } from "./commands/start.js";
 import { buildCommand } from "./commands/build.js";
 import { generateCommand } from "./commands/generate.js";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf-8")
+);
 
 const program = new Command();
 
@@ -35,7 +44,7 @@ ${chalk.cyan(" ╚══╝╚══╝ ╚══════╝ ╚════
 program
   .name("wecon")
   .description("Wecon Framework CLI")
-  .version("1.0.0")
+  .version(packageJson.version)
   .addHelpText("before", logo);
 
 // Register commands

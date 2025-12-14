@@ -47,7 +47,8 @@ describe("CLI Commands", () => {
         { encoding: "utf-8" }
       );
 
-      expect(output.trim()).toBe("1.0.0");
+      // Should match semver format (e.g., "1.2.2")
+      expect(output.trim()).toMatch(/^\d+\.\d+\.\d+$/);
     });
 
     it("should display logo in help", () => {
