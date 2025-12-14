@@ -46,8 +46,7 @@ describe("wecon create command", () => {
       // Check structure exists
       expect(fs.existsSync(projectPath)).toBe(true);
       expect(fs.existsSync(path.join(projectPath, "src/modules"))).toBe(true);
-      expect(fs.existsSync(path.join(projectPath, "src/shared"))).toBe(true);
-      expect(fs.existsSync(path.join(projectPath, "config"))).toBe(true);
+      expect(fs.existsSync(path.join(projectPath, "src/main.ts"))).toBe(true);
     });
 
     it("should create package.json with correct name", async () => {
@@ -69,7 +68,8 @@ describe("wecon create command", () => {
 
       expect(packageJson.name).toBe(projectName);
       expect(packageJson.version).toBe("1.0.0");
-      expect(packageJson.scripts.dev).toContain("ts-node-dev");
+      expect(packageJson.scripts.dev).toContain("tsx");
+      expect(packageJson.dependencies["@weconjs/core"]).toBeDefined();
     });
 
     it("should create wecon.config.ts", async () => {
