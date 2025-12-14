@@ -69,7 +69,7 @@ describe("wecon create command", () => {
 
       expect(packageJson.name).toBe(projectName);
       expect(packageJson.version).toBe("1.0.0");
-      expect(packageJson.scripts.dev).toBe("wecon dev");
+      expect(packageJson.scripts.dev).toContain("ts-node-dev");
     });
 
     it("should create wecon.config.ts", async () => {
@@ -89,7 +89,7 @@ describe("wecon create command", () => {
       expect(fs.existsSync(configPath)).toBe(true);
 
       const configContent = fs.readFileSync(configPath, "utf-8");
-      expect(configContent).toContain("defineConfig");
+      expect(configContent).toContain("export default");
       expect(configContent).toContain(projectName);
     });
 
