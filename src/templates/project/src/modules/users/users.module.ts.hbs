@@ -15,6 +15,7 @@ const usersRoutes = new Routes({
       path: "/",
       middlewares: [userController.findAll],
       rai: "users:read",
+      roles: ["admin", "user"],
       postman: new PostmanRoute({ name: "Get all users" }),
     }),
     new Route({
@@ -22,6 +23,7 @@ const usersRoutes = new Routes({
       path: "/",
       middlewares: [userController.create],
       rai: "users:create",
+      roles: ["admin"],
       postman: new PostmanRoute({ name: "Create user" }),
     }),
   ],
