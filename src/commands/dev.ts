@@ -34,6 +34,7 @@ export const devCommand = new Command("dev")
 
     // Find the entry point
     const entryPoints = [
+      "src/main.ts",
       "src/shared/server/index.ts",
       "src/server/index.ts",
       "src/index.ts",
@@ -53,17 +54,10 @@ export const devCommand = new Command("dev")
       process.exit(1);
     }
 
-    // Start with ts-node-dev for hot reload
+    // Start with tsx for ESM and TypeScript support
     const child = spawn(
       "npx",
-      [
-        "ts-node-dev",
-        "--respawn",
-        "--transpile-only",
-        "-r",
-        "tsconfig-paths/register",
-        entryPoint,
-      ],
+      ["tsx", "--watch", entryPoint],
       {
         cwd: process.cwd(),
         stdio: "inherit",
