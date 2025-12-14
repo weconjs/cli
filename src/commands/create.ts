@@ -43,9 +43,6 @@ export const createCommand = new Command("create")
         "src/shared/middleware",
         "src/shared/utils",
         "src/shared/types",
-        "src/shared/server",
-        "src/shared/database",
-        "config",
         "public",
         "logs",
       ];
@@ -63,26 +60,26 @@ export const createCommand = new Command("create")
         description: "A Wecon-powered API",
         type: "module",
         scripts: {
-          dev: "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/shared/server/index.ts",
-          start: "node dist/shared/server/index.js",
+          dev: "tsx --watch src/main.ts",
+          start: "node dist/main.js",
           build: "tsc && cp -r public dist/ 2>/dev/null || true",
           "generate:module": "wecon generate module",
         },
         dependencies: {
+          "@weconjs/core": "^0.2.0",
           "@weconjs/lib": "^1.0.0",
           express: "^5.0.1",
           mongoose: "^8.0.0",
-          dotenv: "^16.3.0",
           cors: "^2.8.5",
           helmet: "^7.1.0",
+          winston: "^3.18.0",
         },
         devDependencies: {
           typescript: "^5.3.0",
           "@types/node": "^20.10.0",
           "@types/express": "^5.0.0",
           "@types/cors": "^2.8.17",
-          "ts-node-dev": "^2.0.0",
-          "tsconfig-paths": "^4.2.0",
+          tsx: "^4.7.0",
         },
       };
       fs.writeFileSync(
@@ -95,26 +92,73 @@ export const createCommand = new Command("create")
  * Wecon Framework Configuration
  */
 
-export default {
+import { defineConfig } from "@weconjs/core";
+
+export default defineConfig({
+  // App metadata
   app: {
     name: "${name}",
     version: "1.0.0",
-    apiPrefix: "/api/v1",
   },
-  port: process.env.PORT || 3000,
-  database: {
-    uri: process.env.DATABASE_URL || "mongodb://localhost:27017/${name}",
+
+  // Runtime modes
+  modes: {
+    development: {
+      port: 3000,
+      database: {
+        mongoose: {
+          protocol: "mongodb",
+          host: "localhost",
+          port: 27017,
+          database: "${name}",
+        },
+      },
+      logging: {
+        level: "debug",
+      },
+    },
+
+    production: {
+      port: 8080,
+      database: {
+        mongoose: {
+          protocol: "mongodb+srv",
+          host: process.env.DB_HOST || "localhost",
+          database: "${name}",
+          username: process.env.DB_USER,
+          password: process.env.DB_PASSWORD,
+        },
+      },
+      logging: {
+        level: "info",
+        enableFile: true,
+      },
+    },
   },
-};
+
+  // Module registration
+  modules: [
+    "./src/modules/users",
+  ],
+
+  // Feature toggles
+  features: {
+    i18n: {
+      enabled: true,
+      defaultLocale: "en",
+      supported: ["en"],
+    },
+  },
+});
 `;
       fs.writeFileSync(path.join(projectPath, "wecon.config.ts"), weconConfig);
 
       // ========== tsconfig.json ==========
       const tsConfig = {
         compilerOptions: {
-          target: "ES2020",
-          module: "commonjs",
-          moduleResolution: "node",
+          target: "ES2022",
+          module: "NodeNext",
+          moduleResolution: "NodeNext",
           outDir: "./dist",
           rootDir: "./src",
           strict: true,
@@ -123,15 +167,8 @@ export default {
           forceConsistentCasingInFileNames: true,
           resolveJsonModule: true,
           declaration: true,
-          baseUrl: ".",
-          paths: {
-            "@/*": ["./src/*"],
-            "@/modules/*": ["./src/modules/*"],
-            "@/shared/*": ["./src/shared/*"],
-            "@config/*": ["./config/*"],
-          },
         },
-        include: ["src/**/*", "config/**/*"],
+        include: ["src/**/*", "wecon.config.ts"],
         exclude: ["node_modules", "dist"],
       };
       fs.writeFileSync(
@@ -139,99 +176,71 @@ export default {
         JSON.stringify(tsConfig, null, 2)
       );
 
-      // ========== config/env.ts ==========
-      const configEnv = `/**
- * Environment Configuration
+      // ========== src/main.ts ==========
+      const mainTs = `/**
+ * Wecon Application Entry Point
+ *
+ * Simplified entry using @weconjs/core
  */
 
-import dotenv from "dotenv";
 import path from "path";
+import {
+  createWecon,
+  loadConfig,
+  buildUriFromConfig,
+  type WeconContext,
+} from "@weconjs/core";
 
-// Load environment variables
-const envFile = process.env.NODE_ENV === "production" 
-  ? ".env.production" 
-  : ".env.development";
+async function main() {
+  // Load configuration
+  const config = await loadConfig(
+    path.resolve(process.cwd(), "wecon.config.ts"),
+    process.env.NODE_ENV
+  );
 
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+  console.log(\`\\n🚀 Starting \${config.app.name} v\${config.app.version}\`);
+  console.log(\`📦 Mode: \${config.mode}\\n\`);
 
-export const config = {
-  app: {
-    name: "${name}",
-    version: "1.0.0",
-    port: parseInt(process.env.PORT || "3000", 10),
-    apiPrefix: "/api/v1",
-    env: process.env.NODE_ENV || "development",
-  },
-  database: {
-    uri: process.env.DATABASE_URL || "mongodb://localhost:27017/${name}",
-  },
-};
-`;
-      fs.writeFileSync(path.join(projectPath, "config/env.ts"), configEnv);
+  // Import modules after config is loaded
+  const { wecon, modules } = await import("./bootstrap.js");
 
-      // ========== src/shared/server/index.ts ==========
-      const serverIndex = `/**
- * Server Entry Point
- */
-
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import mongoose from "mongoose";
-import { config } from "@config/env";
-import { wecon } from "@/bootstrap";
-
-const app = express();
-
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Health check
-app.get("/health", (_req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    environment: config.app.env,
+  // Create and start the application
+  const app = await createWecon({
+    config,
+    modules: [...modules],
+    wecon,
+    middleware: [],
+    database: {
+      enabled: true,
+      uri: buildUriFromConfig(config.database),
+    },
+    i18n: {
+      enabled: config.features?.i18n?.enabled ?? false,
+      modulesDir: "./src/modules",
+    },
+    logger: {
+      useWinston: true,
+      enableFile: config.logging?.enableFile ?? false,
+    },
+    hooks: {
+      onBoot: async (ctx: WeconContext) => {
+        ctx.logger.info("Application ready to receive requests");
+      },
+      onShutdown: async (ctx: WeconContext) => {
+        ctx.logger.info("Application shutting down...");
+      },
+    },
   });
-});
 
-// Mount API routes
-app.use(config.app.apiPrefix, wecon.handler());
-
-// Error handler
-app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("[Error]", err.message);
-  res.status(500).json({ success: false, message: err.message });
-});
-
-// Start server
-async function start() {
-  try {
-    // Connect to database
-    await mongoose.connect(config.database.uri);
-    console.log("✅ Database connected");
-
-    // Start listening
-    app.listen(config.app.port, () => {
-      console.log(\`
-🚀 \${config.app.name} v\${config.app.version}
-   Environment: \${config.app.env}
-   Port: \${config.app.port}
-   API: http://localhost:\${config.app.port}\${config.app.apiPrefix}
-\`);
-    });
-  } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    process.exit(1);
-  }
+  await app.start();
 }
 
-start();
+main().catch((err) => {
+  console.error("Failed to start application:", err);
+  process.exit(1);
+});
 `;
-      fs.writeFileSync(path.join(projectPath, "src/shared/server/index.ts"), serverIndex);
+      fs.writeFileSync(path.join(projectPath, "src/main.ts"), mainTs);
 
       // ========== src/bootstrap.ts ==========
       const bootstrap = `/**
@@ -239,8 +248,7 @@ start();
  */
 
 import Wecon, { Routes } from "@weconjs/lib";
-import { modules } from "@/modules";
-import { config } from "@config/env";
+import { modules } from "./modules/index.js";
 
 // Build API routes from modules
 const apiRoutes = new Routes({
@@ -253,7 +261,6 @@ const wecon = new Wecon()
   .routes(apiRoutes)
   .roles(["admin", "user", "guest"])
   .guestRole("guest")
-  .dev({ helpfulErrors: config.app.env === "development" })
   .build();
 
 export { wecon, modules };
@@ -267,48 +274,22 @@ export { wecon, modules };
  * Import and register all modules here.
  */
 
-import usersModule from "./users/users.module";
+import usersModule from "./users/users.module.js";
 
 export const modules = [
   usersModule,
-];
+] as const;
 `;
       fs.writeFileSync(path.join(projectPath, "src/modules/index.ts"), modulesIndex);
-
-      // ========== src/modules/module.utils.ts ==========
-      const moduleUtils = `/**
- * Module Utilities
- */
-
-import { Routes, Route } from "@weconjs/lib";
-
-export interface ModuleConfig {
-  name: string;
-  description?: string;
-  routes: Routes | Route;
-}
-
-export interface Module extends ModuleConfig {
-  namespace: string;
-}
-
-export function defineModule(config: ModuleConfig): Module {
-  return {
-    ...config,
-    namespace: config.name,
-  };
-}
-`;
-      fs.writeFileSync(path.join(projectPath, "src/modules/module.utils.ts"), moduleUtils);
 
       // ========== src/modules/users/users.module.ts ==========
       const usersModule = `/**
  * Users Module
  */
 
+import { defineModule } from "@weconjs/core";
 import { Routes, Route, PostmanGroup } from "@weconjs/lib";
-import { defineModule } from "@/modules/module.utils";
-import { userController } from "./controllers/user.controller";
+import { userController } from "./controllers/user.controller.js";
 
 const usersRoutes = new Routes({
   prefix: "/users",
@@ -361,7 +342,7 @@ export default defineModule({
  */
 
 import type { Request, Response } from "express";
-import { userService } from "../services/user.service";
+import { userService } from "../services/user.service.js";
 
 class UserController {
   async findAll(req: Request, res: Response) {
@@ -431,7 +412,7 @@ export const userController = new UserController();
  * User Service
  */
 
-import { User, IUser } from "../models/user.model";
+import { User, IUser } from "../models/user.model.js";
 
 class UserService {
   async findAll(): Promise<IUser[]> {
