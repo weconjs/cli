@@ -1,6 +1,6 @@
 {
   "name": "@weconjs/cli",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Wecon Framework CLI - Create and manage Wecon applications",
   "type": "module",
   "bin": {
